@@ -1,7 +1,44 @@
+import prisma from "@/lib/client";
+import { auth } from "@clerk/nextjs/server";
+import { User } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
+import UserInfoCardInter from "./UserInfoCardInter";
 
-const UserInfoCard = ({ userId }: { userId: string }) => {
+const UserInfoCard = async ({ user }: { user: User }) => {
+  const date = new Date(user.createdAt);
+  const formatdate = date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  });
+  let isUserBlocked = false;
+  let isFollowing = false;
+  let isFollowingSent = false;
+  const { userId: currentUser } = auth();
+  if (currentUser) {
+    const blockResponse = await prisma.block.findFirst({
+      where: {
+        blockerId: currentUser,
+        blockedId: user.id,
+      },
+    });
+    blockResponse ? (isUserBlocked = true) : (isUserBlocked = false);
+    const followResponse = await prisma.follower.findFirst({
+      where: {
+        followerId: currentUser,
+        followingId: user.id,
+      },
+    });
+    followResponse ? (isFollowing = true) : (isFollowing = false);
+    const followRequests = await prisma.followRequest.findFirst({
+      where: {
+        senderId: currentUser,
+        recieverId: user.id,
+      },
+    });
+    followRequests ? (isFollowingSent = true) : (isFollowingSent = false);
+  }
   return (
     <div className="p-4 bg-white rounded-lg shadow-md text-sm flex flex-col gap-4">
       <div className="flex justify-between items-center font-medium">
@@ -12,54 +49,64 @@ const UserInfoCard = ({ userId }: { userId: string }) => {
       </div>
       <div className="flex flex-col gap-4 text-gray-500">
         <div className="flex items-center gap-2">
-          <span className="text-xl text-black">Nigga Man</span>
-          <span className="text-sm">@Nigga</span>
-        </div>
-        <p>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Laudantium
-          atque porro expedita nobis earum officiis incidunt fugiat ut sunt
-          molestias, at quidem? Eum totam ex expedita, nostrum doloribus
-          repellat accusamus.
-        </p>
-        <div className="flex items-center gap-2">
-          <Image src={"/map.png"} width={16} height={16} alt="" />
-          <span>
-            Living in <b>Bangalore</b>
+          <span className="text-xl text-black">
+            {user?.name && user.surname
+              ? `${user.name} ${user.surname}`
+              : user?.username}
           </span>
+          <span className="text-sm">@{user?.username}</span>
         </div>
+
+        {user?.desc && <p>{user.desc}</p>}
+
         <div className="flex items-center gap-2">
-          <Image src={"/school.png"} width={16} height={16} alt="" />
-          <span>
-            Went to <b>PES University</b>
-          </span>
+          {user.city && (
+            <div>
+              <Image src={"/city.png"} alt="" width={16} height={16} />
+              <span>{user.city}</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          <Image src={"/work.png"} width={16} height={16} alt="" />
-          <span>
-            Works at <b>Google</b>
-          </span>
+          {user.school && (
+            <div>
+              <Image src={"/school.png"} alt="" width={16} height={16} />
+              <span>{user.school}</span>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {user.work && (
+            <div>
+              <Image src={"/work.png"} alt="" width={16} height={16} />
+              <span>{user.work}</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center justify-between">
-          <div className="flex gap-1 items-center">
-            <Image src={"/link.png"} alt="" width={16} height={16} />
-            <Link
-              href={"https://fardeen-shaikh.netlify.app"}
-              className="text-blue-500"
-            >
-              fardeen.dev
-            </Link>
-          </div>
+          {user.website && (
+            <div className="flex gap-1 items-center">
+              <Image src={"/link.png"} alt="" width={16} height={16} />
+              <Link
+                href={"https://fardeen-shaikh.netlify.app"}
+                className="text-blue-500"
+              >
+                {user?.website}
+              </Link>
+            </div>
+          )}
           <div className="flex gap-1 items-center">
             <Image src={"/date.png"} alt="" width={16} height={16} />
-            <span>Joined November 2024</span>
+            <span>Joined {formatdate}</span>
           </div>
         </div>
-        <button className="bg-blue-500 text-white text-sm rounded-md p-2">
-          Follow
-        </button>
-        <span className="text-red-500 self-end text-xs cursor-pointer">
-          Block User
-        </span>
+        <UserInfoCardInter
+          userId={user.id}
+          currentUserId={currentUser}
+          isUserBlocked={isUserBlocked}
+          isFollowing={isFollowing}
+          isFollowingSent={isFollowingSent}
+        />
       </div>
     </div>
   );
