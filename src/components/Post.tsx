@@ -13,7 +13,7 @@ const Post = () => {
             width={10}
             height={10}
           />
-          <span className="font-medium">Some Nigga</span>
+          <span className="font-medium">Matthew</span>
         </div>
         <Image src="/more.png" alt="" width={16} height={16} />
       </div>

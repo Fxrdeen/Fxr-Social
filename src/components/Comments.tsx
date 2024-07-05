@@ -36,7 +36,7 @@ const Comments = () => {
             height={32}
           />
           <div className="flex flex-col gap-2 flex-1">
-            <span className="font-medium">Nigga</span>
+            <span className="font-medium">John</span>
             <p>
               Lorem ipsum dolor sit amet consectetur adipisicing elit. Soluta
               doloremque in, quisquam ducimus tenetur eos saepe iusto quae
