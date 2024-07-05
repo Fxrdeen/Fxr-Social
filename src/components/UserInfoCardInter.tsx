@@ -1,7 +1,7 @@
 "use client";
 
-import { switchFollow } from "@/lib/actions";
-import { useState } from "react";
+import { switchBlock, switchFollow } from "@/lib/actions";
+import { useOptimistic, useState } from "react";
 
 const UserInfoCardInter = ({
   userId,
@@ -22,6 +22,7 @@ const UserInfoCardInter = ({
     followingRequestSent: isFollowingSent,
   });
   const follow = async () => {
+    setoptimisticFollow("follow");
     try {
       await switchFollow(userId);
       setUserState((prev) => ({
@@ -32,21 +33,42 @@ const UserInfoCardInter = ({
       }));
     } catch (error) {}
   };
+  const block = async () => {
+    setoptimisticFollow("block");
+    try {
+      await switchBlock(userId);
+      setUserState((prev) => ({ ...prev, blocked: !prev.blocked }));
+    } catch (error) {}
+  };
+  const [optimisticFollow, setoptimisticFollow] = useOptimistic(
+    userState,
+    (state, value: "follow" | "block") =>
+      value === "follow"
+        ? {
+            ...state,
+            following: state.following && false,
+            followingRequestSent:
+              !state.following && !state.followingRequestSent ? true : false,
+          }
+        : { ...state, blocked: !state.blocked }
+  );
   return (
     <>
       <form action={follow}>
         <button className="w-full bg-blue-500 text-white text-sm rounded-md p-2">
-          {isFollowing
+          {optimisticFollow.following
             ? "Following"
-            : userState.followingRequestSent
+            : optimisticFollow.followingRequestSent
             ? "Friend Request Sent"
             : "Follow"}
         </button>
       </form>
-      <form action="" className="self-end">
-        <span className="text-red-400 self-end text-xs cursor-pointer">
-          {userState.blocked ? "Unblock User" : "Block User"}
-        </span>
+      <form action={block} className="self-end">
+        <button>
+          <span className="text-red-400 self-end text-xs cursor-pointer">
+            {optimisticFollow.blocked ? "Unblock User" : "Block User"}
+          </span>
+        </button>
       </form>
     </>
   );
